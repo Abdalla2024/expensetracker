@@ -182,9 +182,8 @@ struct AnalyticsView: View {
                     Spacer(minLength: 100)
                 }
                 .padding(.horizontal)
+                .padding(.top, 40)
             }
-            .navigationTitle("Analytics")
-            .navigationBarTitleDisplayMode(.inline)
         }
     }
     
