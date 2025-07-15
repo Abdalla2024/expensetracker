@@ -559,15 +559,17 @@ struct AnalyticsView: View {
                 .frame(maxWidth: .infinity)
             } else {
                 Chart {
+                    let maxValue = trendLineData.map { abs($0.value) }.max() ?? 1
+                    
                     ForEach(trendLineData, id: \.period) { data in
+                        let intensity = min(1.0, abs(data.value) / maxValue)
+                        let baseOpacity = 0.6 + (intensity * 0.4) // Range from 0.6 to 1.0
+                        
                         LineMark(
                             x: .value("Period", data.period),
                             y: .value("Value", data.value)
                         )
-                        .foregroundStyle(selectedTimeRange == .month ? 
-                            LinearGradient(colors: [Color(hex: "FF6B6B") ?? .orange, Color(hex: "4ECDC4") ?? .teal], startPoint: .leading, endPoint: .trailing) :
-                            LinearGradient(colors: [data.value >= 0 ? Color(hex: "4ECDC4") ?? .green : Color(hex: "FF6B6B") ?? .red, data.value >= 0 ? Color(hex: "45B7D1") ?? .blue : Color(hex: "FF8E53") ?? .orange], startPoint: .leading, endPoint: .trailing)
-                        )
+                        .foregroundStyle((Color(hex: "219EBC") ?? .blue).opacity(baseOpacity))
                         .lineStyle(StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
                         .interpolationMethod(.catmullRom)
                         
@@ -576,9 +578,7 @@ struct AnalyticsView: View {
                             y: .value("Value", data.value)
                         )
                         .foregroundStyle(
-                            selectedTimeRange == .month 
-                                ? LinearGradient(colors: [Color(hex: "FF6B6B")?.opacity(0.4) ?? .orange.opacity(0.4), Color(hex: "4ECDC4")?.opacity(0.2) ?? .teal.opacity(0.2), Color.clear], startPoint: .top, endPoint: .bottom)
-                                : LinearGradient(colors: [data.value >= 0 ? Color(hex: "4ECDC4")?.opacity(0.4) ?? .green.opacity(0.4) : Color(hex: "FF6B6B")?.opacity(0.4) ?? .red.opacity(0.4), Color.clear], startPoint: .top, endPoint: .bottom)
+                            LinearGradient(colors: [(Color(hex: "219EBC") ?? .blue).opacity(baseOpacity * 0.8), (Color(hex: "219EBC") ?? .blue).opacity(baseOpacity * 0.3), Color.clear], startPoint: .top, endPoint: .bottom)
                         )
                         .interpolationMethod(.catmullRom)
                     }
