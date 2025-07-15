@@ -380,35 +380,36 @@ struct AnalyticsView: View {
             } else {
                 HStack(spacing: 20) {
                     // Pie Chart
-                    Chart(expenseCategoriesData, id: \.name) { category in
+                    Chart(expenseCategoriesData.enumerated().map { IndexedCategoryData(index: $0.offset, category: $0.element) }, id: \.category.name) { indexedCategory in
                         SectorMark(
-                            angle: .value("Amount", category.amount)
+                            angle: .value("Amount", indexedCategory.category.amount),
+                            angularInset: 1.0
                         )
-                        .foregroundStyle(categoryColor(for: category.name))
-                        .cornerRadius(2)
+                        .foregroundStyle(categoryColor(for: indexedCategory.index))
+                        .cornerRadius(4)
                     }
-                    .frame(width: 150, height: 150)
+                    .frame(width: 160, height: 160)
                     
                     // Legend
                     VStack(alignment: .leading, spacing: 8) {
-                        ForEach(expenseCategoriesData.prefix(6), id: \.name) { category in
+                        ForEach(expenseCategoriesData.prefix(6).enumerated().map { IndexedCategoryData(index: $0.offset, category: $0.element) }, id: \.category.name) { indexedCategory in
                             HStack(spacing: 8) {
                                 Circle()
-                                    .fill(categoryColor(for: category.name))
+                                    .fill(categoryColor(for: indexedCategory.index))
                                     .frame(width: 12, height: 12)
                                 
                                 VStack(alignment: .leading, spacing: 1) {
-                                    Text(category.name)
+                                    Text(indexedCategory.category.name)
                                         .font(.caption)
                                         .foregroundColor(.primary)
-                                    Text(formatCurrency(category.amount))
+                                    Text(formatCurrency(indexedCategory.category.amount))
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                 }
                                 
                                 Spacer()
                                 
-                                Text("\(Int((category.amount / expenseCategoriesData.reduce(0) { $0 + $1.amount }) * 100))%")
+                                Text("\(Int((indexedCategory.category.amount / expenseCategoriesData.reduce(0) { $0 + $1.amount }) * 100))%")
                                     .font(.caption)
                                     .fontWeight(.medium)
                                     .foregroundColor(.secondary)
@@ -590,23 +591,31 @@ struct CategoryExpenseData: Identifiable {
     let amount: Double
 }
 
+struct IndexedCategoryData: Identifiable {
+    let id = UUID()
+    let index: Int
+    let category: CategoryExpenseData
+}
+
 extension AnalyticsView {
-    private func categoryColor(for categoryName: String) -> Color {
+    private func categoryColor(for index: Int) -> Color {
+        // Carefully selected colors with maximum visual distinction
         let colors: [Color] = [
             Color(hex: "219EBC") ?? .blue,   // Light blue
             .orange,                         // Orange
             Color(hex: "023047") ?? .blue,   // Dark blue
             .green,                          // Green
             .purple,                         // Purple
-            .pink,                           // Pink
             .red,                            // Red
             .yellow,                         // Yellow
+            .pink,                           // Pink
             .mint,                           // Mint
-            .cyan                            // Cyan
+            .cyan,                           // Cyan
+            .brown,                          // Brown
+            Color(hex: "FF6B6B") ?? .red     // Coral red
         ]
         
-        let index = abs(categoryName.hashValue) % colors.count
-        return colors[index]
+        return colors[index % colors.count]
     }
 }
 
