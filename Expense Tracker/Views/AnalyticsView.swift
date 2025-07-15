@@ -143,40 +143,7 @@ struct AnalyticsView: View {
         }
     }
     
-    private var monthlyTrends: [MonthlyTrend] {
-        let calendar = Calendar.current
-        let endDate = Date()
-        guard let startDate = calendar.date(byAdding: .month, value: -11, to: endDate) else {
-            return []
-        }
-        
-        var trends: [MonthlyTrend] = []
-        var currentDate = startDate
-        var monthCount = 0
-        
-        while currentDate <= endDate && monthCount < 12 {
-            let monthTransactions = transactions.filter { transaction in
-                calendar.isDate(transaction.date, equalTo: currentDate, toGranularity: .month)
-            }
-            
-            let income = monthTransactions.filter { $0.type == .income }.reduce(0) { $0 + $1.amount }
-            let expenses = monthTransactions.filter { $0.type == .expense }.reduce(0) { $0 + $1.amount }
-            
-            let formatter = DateFormatter()
-            formatter.dateFormat = "MMM"
-            let monthName = formatter.string(from: currentDate)
-            
-            trends.append(MonthlyTrend(month: monthName, income: income, expenses: expenses))
-            
-            guard let nextMonth = calendar.date(byAdding: .month, value: 1, to: currentDate) else {
-                break
-            }
-            currentDate = nextMonth
-            monthCount += 1
-        }
-        
-        return trends
-    }
+
     
     private var expenseCategoriesData: [CategoryExpenseData] {
         let expenseTransactions = filteredTransactions.filter { $0.type == .expense }
@@ -208,9 +175,6 @@ struct AnalyticsView: View {
                     
                     // Expense Categories Donut Chart
                     expenseCategoriesDonutChart
-                    
-                    // Monthly Trends Chart
-                    monthlyTrendsChart
                     
                     // Quick Stats
                     quickStats
@@ -397,7 +361,7 @@ struct AnalyticsView: View {
     
     private var expenseCategoriesDonutChart: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Spending Categories")
+            Text("Spending Breakdown")
                 .font(.title2)
                 .fontWeight(.bold)
                 .foregroundColor(Color(hex: "023047") ?? .blue)
@@ -455,68 +419,6 @@ struct AnalyticsView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .padding(.horizontal, 8)
-            }
-        }
-        .padding(20)
-        .background(Color.white)
-        .cornerRadius(16)
-        .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 4)
-        .padding(.bottom, 20)
-    }
-    
-    private var monthlyTrendsChart: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Monthly Trends")
-                .font(.title2)
-                .fontWeight(.bold)
-                .foregroundColor(Color(hex: "023047") ?? .blue)
-            
-            if monthlyTrends.allSatisfy({ $0.income == 0 && $0.expenses == 0 }) {
-                VStack(spacing: 16) {
-                    Image(systemName: "chart.line.uptrend.xyaxis")
-                        .font(.system(size: 48))
-                        .foregroundColor(.gray.opacity(0.5))
-                    
-                    Text("No data available")
-                        .font(.body)
-                        .foregroundColor(.secondary)
-                }
-                .frame(height: 200)
-                .frame(maxWidth: .infinity)
-            } else {
-                Chart {
-                    ForEach(monthlyTrends) { trend in
-                        LineMark(
-                            x: .value("Month", trend.month),
-                            y: .value("Income", trend.income)
-                        )
-                        .foregroundStyle(Color(hex: "219EBC") ?? .blue)
-                        .symbol(Circle())
-                        
-                        LineMark(
-                            x: .value("Month", trend.month),
-                            y: .value("Expenses", trend.expenses)
-                        )
-                        .foregroundStyle(.orange)
-                        .symbol(Circle())
-                    }
-                }
-                .frame(height: 200)
-                .chartYAxis {
-                    AxisMarks(position: .leading) { _ in
-                        AxisGridLine()
-                        AxisValueLabel()
-                    }
-                }
-                .chartXAxis {
-                    AxisMarks(position: .bottom) { _ in
-                        AxisValueLabel()
-                    }
-                }
-                .chartForegroundStyleScale([
-                    "Income": Color(hex: "219EBC") ?? .blue,
-                    "Expenses": .orange
-                ])
             }
         }
         .padding(20)
@@ -679,13 +581,6 @@ struct QuickStatItem: View {
 struct IncomeExpenseData: Identifiable {
     let id = UUID()
     let period: String
-    let income: Double
-    let expenses: Double
-}
-
-struct MonthlyTrend: Identifiable {
-    let id = UUID()
-    let month: String
     let income: Double
     let expenses: Double
 }
