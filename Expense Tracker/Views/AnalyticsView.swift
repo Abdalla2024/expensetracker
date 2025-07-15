@@ -570,8 +570,6 @@ struct AnalyticsView: View {
                         )
                         .lineStyle(StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
                         .interpolationMethod(.catmullRom)
-                        .symbol(.circle)
-                        .symbolSize(60)
                         
                         AreaMark(
                             x: .value("Period", data.period),
