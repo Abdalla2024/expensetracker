@@ -27,7 +27,6 @@ struct AnalyticsView: View {
     
     private var filteredTransactions: [Transaction] {
         let calendar = Calendar.current
-        let now = Date()
         
         let filtered: [Transaction]
         switch selectedTimeRange {
@@ -179,6 +178,21 @@ struct AnalyticsView: View {
         return trends
     }
     
+    private var expenseCategoriesData: [CategoryExpenseData] {
+        let expenseTransactions = filteredTransactions.filter { $0.type == .expense }
+        var categoryTotals: [String: Double] = [:]
+        
+        for transaction in expenseTransactions {
+            let categoryName = transaction.category?.name ?? "Uncategorized"
+            categoryTotals[categoryName, default: 0] += transaction.amount
+        }
+        
+        return categoryTotals.map { CategoryExpenseData(name: $0.key, amount: $0.value) }
+            .sorted { $0.amount > $1.amount }
+            .prefix(6)
+            .map { $0 }
+    }
+    
     var body: some View {
         NavigationView {
             ScrollView {
@@ -191,6 +205,9 @@ struct AnalyticsView: View {
                     
                     // Income vs Expenses Chart
                     incomeVsExpensesChart
+                    
+                    // Expense Categories Donut Chart
+                    expenseCategoriesDonutChart
                     
                     // Monthly Trends Chart
                     monthlyTrendsChart
@@ -317,7 +334,7 @@ struct AnalyticsView: View {
                 .frame(maxWidth: .infinity)
             } else {
                 Chart {
-                    ForEach(incomeVsExpensesData) { data in
+                    ForEach(incomeVsExpensesData, id: \.period) { data in
                         BarMark(
                             x: .value("Period", data.period),
                             y: .value("Amount", data.income),
@@ -369,6 +386,75 @@ struct AnalyticsView: View {
                     "Income": Color(hex: "219EBC") ?? .blue,
                     "Expenses": .orange
                 ])
+            }
+        }
+        .padding(20)
+        .background(Color.white)
+        .cornerRadius(16)
+        .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 4)
+        .padding(.bottom, 20)
+    }
+    
+    private var expenseCategoriesDonutChart: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Spending Categories")
+                .font(.title2)
+                .fontWeight(.bold)
+                .foregroundColor(Color(hex: "023047") ?? .blue)
+            
+            if expenseCategoriesData.isEmpty {
+                VStack(spacing: 16) {
+                    Image(systemName: "chart.donut")
+                        .font(.system(size: 48))
+                        .foregroundColor(.gray.opacity(0.5))
+                    
+                    Text("No spending data")
+                        .font(.body)
+                        .foregroundColor(.secondary)
+                }
+                .frame(height: 200)
+                .frame(maxWidth: .infinity)
+            } else {
+                HStack(spacing: 20) {
+                    // Pie Chart
+                    Chart(expenseCategoriesData, id: \.name) { category in
+                        SectorMark(
+                            angle: .value("Amount", category.amount)
+                        )
+                        .foregroundStyle(categoryColor(for: category.name))
+                        .cornerRadius(2)
+                    }
+                    .frame(width: 150, height: 150)
+                    
+                    // Legend
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(expenseCategoriesData.prefix(6), id: \.name) { category in
+                            HStack(spacing: 8) {
+                                Circle()
+                                    .fill(categoryColor(for: category.name))
+                                    .frame(width: 12, height: 12)
+                                
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(category.name)
+                                        .font(.caption)
+                                        .foregroundColor(.primary)
+                                    Text(formatCurrency(category.amount))
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                                
+                                Spacer()
+                                
+                                Text("\(Int((category.amount / expenseCategoriesData.reduce(0) { $0 + $1.amount }) * 100))%")
+                                    .font(.caption)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .padding(.horizontal, 8)
             }
         }
         .padding(20)
@@ -602,6 +688,32 @@ struct MonthlyTrend: Identifiable {
     let month: String
     let income: Double
     let expenses: Double
+}
+
+struct CategoryExpenseData: Identifiable {
+    let id = UUID()
+    let name: String
+    let amount: Double
+}
+
+extension AnalyticsView {
+    private func categoryColor(for categoryName: String) -> Color {
+        let colors: [Color] = [
+            Color(hex: "219EBC") ?? .blue,   // Light blue
+            .orange,                         // Orange
+            Color(hex: "023047") ?? .blue,   // Dark blue
+            .green,                          // Green
+            .purple,                         // Purple
+            .pink,                           // Pink
+            .red,                            // Red
+            .yellow,                         // Yellow
+            .mint,                           // Mint
+            .cyan                            // Cyan
+        ]
+        
+        let index = abs(categoryName.hashValue) % colors.count
+        return colors[index]
+    }
 }
 
 #Preview {

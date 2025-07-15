@@ -121,7 +121,7 @@ struct BudgetView: View {
         VStack(spacing: 16) {
             // Edit Budget Button
             HStack {
-                Text(monthYearString)
+                Text(monthBudgetString)
                     .font(.title2)
                     .fontWeight(.bold)
                 Spacer()
@@ -186,6 +186,12 @@ struct BudgetView: View {
         let formatter = DateFormatter()
         formatter.dateFormat = "MMMM yyyy"
         return formatter.string(from: selectedMonth)
+    }
+    
+    private var monthBudgetString: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMMM"
+        return formatter.string(from: selectedMonth) + "'s Budget"
     }
     
     private func changeMonth(_ direction: Int) {
